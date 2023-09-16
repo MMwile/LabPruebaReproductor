@@ -238,14 +238,13 @@ public class Flow extends javax.swing.JFrame {
                 try{
                     reproductor = AudioSystem.getClip();
                     reproductor.open(adminaudio);
+                    ReproductorBtn.setText("||");
                     if(posactual==0){
                         reproduciendo=true;
                         reproductor.start();
                         ConectarProgreso();
-                    }else{
-                        ReproductorBtn.setText("||");
+                    }else
                         Reanudar();
-                    }
                 }catch(Exception e){
 
                 }
