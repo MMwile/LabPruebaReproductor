@@ -25,18 +25,19 @@ public class Flow extends javax.swing.JFrame {
     private Clip reproductor;
     private int posactual;
     private int contador;
-    private int segundos;
     private int songactual;
     private boolean pausado;
     private boolean reproduciendo;
+    private boolean reproducciontotal;
     
     public Flow() {
         initComponents();
         setLocationRelativeTo(null);
+        songactual=0;
         pausado=false;
         reproduciendo=false;
         contador=0;
-        segundos=0;
+        reproducciontotal=false;
     }
 
     @SuppressWarnings("unchecked")
@@ -53,7 +54,7 @@ public class Flow extends javax.swing.JFrame {
         ReproductorBtn = new javax.swing.JButton();
         SiguienteCancionBtn = new javax.swing.JButton();
         AnteriorCancionBtn = new javax.swing.JButton();
-        jButton4 = new javax.swing.JButton();
+        ReproducirTodoBtn = new javax.swing.JButton();
         TiempoActual = new javax.swing.JLabel();
         TiempoTotal = new javax.swing.JLabel();
         Fondo = new javax.swing.JLabel();
@@ -112,8 +113,13 @@ public class Flow extends javax.swing.JFrame {
         });
         jPanel1.add(AnteriorCancionBtn, new org.netbeans.lib.awtextra.AbsoluteConstraints(130, 110, 50, 30));
 
-        jButton4.setText("Reproducir todo");
-        jPanel1.add(jButton4, new org.netbeans.lib.awtextra.AbsoluteConstraints(250, 330, -1, -1));
+        ReproducirTodoBtn.setText("Reproducir todo");
+        ReproducirTodoBtn.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                ReproducirTodoBtnActionPerformed(evt);
+            }
+        });
+        jPanel1.add(ReproducirTodoBtn, new org.netbeans.lib.awtextra.AbsoluteConstraints(250, 330, -1, -1));
 
         TiempoActual.setFont(new java.awt.Font("Arial", 0, 14)); // NOI18N
         TiempoActual.setHorizontalAlignment(javax.swing.SwingConstants.LEFT);
@@ -166,6 +172,10 @@ public class Flow extends javax.swing.JFrame {
         SiguienteAnteriorCancion(false);
     }//GEN-LAST:event_AnteriorCancionBtnActionPerformed
 
+    private void ReproducirTodoBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_ReproducirTodoBtnActionPerformed
+        ReproducirTodaLaLista();
+    }//GEN-LAST:event_ReproducirTodoBtnActionPerformed
+
     public static void main(String args[]) {
         java.awt.EventQueue.invokeLater(new Runnable() {
             public void run() {
@@ -181,12 +191,12 @@ public class Flow extends javax.swing.JFrame {
     private javax.swing.JList<String> ListaCanciones;
     private javax.swing.JLabel NombreArchivo;
     private javax.swing.JProgressBar ProgresoCancion;
+    private javax.swing.JButton ReproducirTodoBtn;
     private javax.swing.JButton ReproductorBtn;
     private javax.swing.JButton SeleccionarCancionBtn;
     private javax.swing.JButton SiguienteCancionBtn;
     private javax.swing.JLabel TiempoActual;
     private javax.swing.JLabel TiempoTotal;
-    private javax.swing.JButton jButton4;
     private javax.swing.JPanel jPanel1;
     private javax.swing.JScrollPane jScrollPane1;
     // End of variables declaration//GEN-END:variables
@@ -213,6 +223,7 @@ public class Flow extends javax.swing.JFrame {
                         lista.addElement((contador+1)+" - "+fichero.getName());
                         contador++;
                         ListaCanciones.setModel(lista);
+                        setElementoSeleccionado(ListaCanciones,(songactual+1)+" - "+nombrearchivo);
                     }
                 }
             };
@@ -232,7 +243,7 @@ public class Flow extends javax.swing.JFrame {
                         reproductor.start();
                         ConectarProgreso();
                     }else{
-                        ReproductorBtn.setText(">");
+                        ReproductorBtn.setText("||");
                         Reanudar();
                     }
                 }catch(Exception e){
@@ -255,7 +266,7 @@ public class Flow extends javax.swing.JFrame {
     }
     public void Pausar(){
         if (reproductor != null){
-            ReproductorBtn.setText("||");
+            ReproductorBtn.setText(">");
             posactual=reproductor.getFramePosition();
             reproductor.stop();
             reproduciendo=false;
@@ -265,7 +276,7 @@ public class Flow extends javax.swing.JFrame {
     
     public void Reanudar(){
         if(reproductor != null && pausado) {
-            ReproductorBtn.setText(">");
+            ReproductorBtn.setText("||");
             reproductor.setFramePosition(posactual);
             reproductor.start();
             reproduciendo = true;
@@ -286,10 +297,17 @@ public class Flow extends javax.swing.JFrame {
                     int segundoss = possegundos%60;
                     TiempoActual.setText(String.format("%02d:%02d", minutos, segundoss));
                     
-                    if(porcentaje>=99){
+                    if(porcentaje>=100){
                         posactual=0;
                         reproduciendo=false;
                         pausado=false;
+                        if(reproducciontotal){
+                            if(songactual<dirs.size()){
+                                songactual++;
+                                SiguienteAnteriorCancion(true);
+                            }else
+                                reproducciontotal=false;
+                        }
                     }
                 }
             });
@@ -302,9 +320,12 @@ public class Flow extends javax.swing.JFrame {
         if(pos!=null){
             String[] separador = pos.split("\\s+");
             int indice = Integer.valueOf(separador[0])-1;
+            songactual=indice+1;
             archivopath=dirs.get(indice);
             nombrearchivo=nombres.get(indice);
             NombreArchivo.setText(nombrearchivo);
+            reproducciontotal=false;
+            Parar();
                 try{
                     File audio = new File(archivopath);
                     AudioInputStream adminaudio = AudioSystem.getAudioInputStream(audio);
@@ -343,7 +364,7 @@ public class Flow extends javax.swing.JFrame {
                         Parar();
                         archivopath=dirs.get(i+1);
                         nombrearchivo=nombres.get(i+1);
-                        setElementoSeleccionado(ListaCanciones,(i+1)+" - "+nombrearchivo);
+                        setElementoSeleccionado(ListaCanciones,(i+2)+" - "+nombrearchivo);
                     }
                 } else{
                     if(!siguiente && (i-1>-1)){
@@ -377,11 +398,23 @@ public class Flow extends javax.swing.JFrame {
         DefaultListModel<String> modelo = (DefaultListModel)listacanciones.getModel();
         int indice=-1;
         for (int i=0; i<modelo.getSize(); i++) {
-            System.out.println(modelo.getElementAt(i)+" "+cancion);
             if (modelo.getElementAt(i).equals(cancion)) {
                 indice=i;
             }
         }
         ListaCanciones.setSelectedIndex(indice);
+    }
+    
+    public void ReproducirTodaLaLista(){
+        if(!dirs.isEmpty()){
+            Parar();
+            ListaCanciones.setSelectedIndex(0);
+            archivopath=dirs.get(0);
+            nombrearchivo=nombres.get(0);
+            NombreArchivo.setText(nombrearchivo);
+            songactual=0;
+            reproducciontotal=true;
+            ReproducirCancion();
+        }
     }
 }
